@@ -84,7 +84,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ? Text('You have built nothing...', style: Theme.of(context).textTheme.headline6)
             : _counter == 1
                 ? Text('You have built 1 future!', style: Theme.of(context).textTheme.headline5)
-                : Text('You have built $_counter futures!!', style: Theme.of(context).textTheme.headline4),
+                : Text('You have built $_counter futures!!', style: Theme.of(context).textTheme.headline5),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _incrementCounter,
