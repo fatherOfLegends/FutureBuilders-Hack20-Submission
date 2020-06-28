@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flame/anchor.dart';
@@ -56,14 +57,18 @@ class MyGame extends BaseGame with TapDetector {
   bool running = true;
   Size screenSize;
   ui.Image carImage;
+  ui.Image carImageLeft;
+  ui.Image carImageRight;
   ui.Image horizonImage;
   Ground ground;
+  Car car;
 
   MyGame() {
     ground = Ground();
     add(ground);
-    add(Horizon());
-    add(Car());
+    //add(Horizon());
+    car = Car();
+    add(car);
     _loadImages();
   }
 
@@ -74,22 +79,29 @@ class MyGame extends BaseGame with TapDetector {
 
   @override
   void onTap() {
-    if (running) {
+    ground.driftLeft = !ground.driftLeft;
+    car.driftLeft = !car.driftLeft;
+
+    /*if (running) {
       pauseEngine();
     } else {
       resumeEngine();
     }
 
-    running = !running;
+    running = !running;*/
   }
 
   Future<void> _loadImages() async {
-    carImage = await Flame.images.load('car.png');
+    carImage = await Flame.images.load('ship_mid.png');
+    carImageLeft = await Flame.images.load('ship_left.png');
+    carImageRight = await Flame.images.load('ship_right.png');
     horizonImage = await Flame.images.load('neon-background.png');
   }
 }
-
+/*
 class Horizon extends PositionComponent with HasGameRef<MyGame> {
+  static const ROTATION_SPEED = 0.75;
+
   @override
   void resize(Size size) {
     x = -10;
@@ -111,10 +123,12 @@ class Horizon extends PositionComponent with HasGameRef<MyGame> {
   void onMount() {
     anchor = Anchor.center;
   }
-}
+}*/
 
 class Car extends PositionComponent with HasGameRef<MyGame> {
   static const SPEED = 0.25;
+
+  bool driftLeft = true;
 
   @override
   void resize(Size size) {
@@ -127,8 +141,14 @@ class Car extends PositionComponent with HasGameRef<MyGame> {
     prepareCanvas(c);
     if (gameRef.carImage != null) {
       c.save();
-      c.scale(0.2, 0.2);
-      c.drawImage(gameRef.carImage, Offset(-180, -380), Paint());
+      c.scale(0.7, 0.7);
+      if (angle > -0.03 && angle < 0.03) {
+        c.drawImage(gameRef.carImage, Offset(-180, -120), Paint());
+      } else if (angle < -0.03) {
+        c.drawImage(gameRef.carImageRight, Offset(-180, -120), Paint());
+      } else if (angle > 0.03) {
+        c.drawImage(gameRef.carImageLeft, Offset(-180, -120), Paint());
+      }
       c.restore();
     }
   }
@@ -136,7 +156,12 @@ class Car extends PositionComponent with HasGameRef<MyGame> {
   @override
   void update(double t) {
     super.update(t);
-    angle = angle == .01 ? -.01 : .01;
+    if (driftLeft) {
+      angle = math.min(.1, angle + .01);
+    } else {
+      angle = math.max(-.1, angle - .01);
+    }
+    //angle = angle == .01 ? -.01 : .01;
     /*angle += SPEED * t;
     angle %= 2 * math.pi;*/
   }
@@ -151,6 +176,7 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
   double friction = 1;
   static const ROTATION_SPEED = 0.75;
   int currentTime = 0;
+  bool driftLeft = true;
 
   Size get screenSize => gameRef.screenSize;
   double get height => screenSize.height;
@@ -168,6 +194,12 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
     _drawBackground(c);
     _drawGamePlane(c, color: Palette.pink.color, stroke: 3, blendMode: BlendMode.srcOver);
     _drawGamePlane(c, color: Palette.white.color, stroke: 1, blendMode: BlendMode.luminosity);
+    if (gameRef.horizonImage != null) {
+      c.save();
+      c.scale(0.45, 0.45);
+      c.drawImage(gameRef.horizonImage, Offset(-100, 0), Paint());
+      c.restore();
+    }
   }
 
   void _drawGamePlane(Canvas canvas, {Color color, double stroke, BlendMode blendMode}) {
@@ -195,7 +227,7 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
       lastLineY = lineY;
     }
 
-    final centerX = width / 2;
+    final centerX = width / 2 * (1 - angle);
     canvas.drawLine(Offset(centerX, height), Offset(centerX, horizonY * 1.04), linePaint);
     for (int i = 1; i < 20; i++) {
       double topSpacing = lineSpacing * .3 * i;
@@ -218,7 +250,11 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
   void update(double t) {
     super.update(t);
     currentTime += (t * 1000).toInt();
-    angle = 0;
+    if (driftLeft) {
+      angle = math.max(-.2, angle - .01);
+    } else {
+      angle = math.min(.2, angle + .01);
+    }
     /*angle += ROTATION_SPEED * t;
     angle %= 2 * math.pi;*/
   }
