@@ -12,7 +12,27 @@ Future<void> main() async {
   await flameUtil.setOrientation(DeviceOrientation.portraitUp);
 
   BoxGame game = BoxGame();
-  runApp(game.widget);
+  runApp(
+    Stack(
+      children: [
+        game.widget,
+        Image.asset('images/neon-background.jpg'),
+        Align(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 32),
+            child: Image.asset(
+              'images/car.png',
+              width: 100,
+              height: 200,
+            ),
+          ),
+          alignment: Alignment.bottomCenter,
+        ),
+      ],
+      textDirection: TextDirection.ltr,
+      alignment: Alignment.topCenter,
+    ),
+  );
 }
 
 class BoxGame extends Game with TapDetector {
@@ -43,7 +63,7 @@ class BoxGame extends Game with TapDetector {
     final speedFactor = currentTime % 400 / 400;
     final movementAmount = (lineSpacing * speedFactor).floorToDouble();
     double lastLineY = height + movementAmount;
-    final horizonY = height * .6;
+    final horizonY = height * .49;
     canvas.drawLine(Offset(0, lastLineY), Offset(width, lastLineY), linePaint);
     while (lastLineY > horizonY * 1.04) {
       final factor = (lastLineY - horizonY) / horizonY;
@@ -53,14 +73,15 @@ class BoxGame extends Game with TapDetector {
     }
 
     final centerX = width / 2;
-    canvas.drawLine(Offset(centerX, height), Offset(centerX, horizonY * 1.04), linePaint);
+    canvas.drawLine(
+        Offset(centerX, height), Offset(centerX, horizonY * 1.04), linePaint);
     for (int i = 1; i < 10; i++) {
       double topSpacing = lineSpacing * .3 * i;
       double bottomSpacing = lineSpacing * i;
-      canvas.drawLine(
-          Offset(centerX - bottomSpacing, height), Offset(centerX - topSpacing, horizonY * 1.04), linePaint);
-      canvas.drawLine(
-          Offset(centerX + bottomSpacing, height), Offset(centerX + topSpacing, horizonY * 1.04), linePaint);
+      canvas.drawLine(Offset(centerX - bottomSpacing, height),
+          Offset(centerX - topSpacing, horizonY * 1.04), linePaint);
+      canvas.drawLine(Offset(centerX + bottomSpacing, height),
+          Offset(centerX + topSpacing, horizonY * 1.04), linePaint);
     }
   }
 
