@@ -92,9 +92,9 @@ class MyGame extends BaseGame with TapDetector {
   }
 
   Future<void> _loadImages() async {
-    carImage = await Flame.images.load('ship_mid.png');
-    carImageLeft = await Flame.images.load('ship_left.png');
-    carImageRight = await Flame.images.load('ship_right.png');
+    carImage = await Flame.images.load('2.png');
+    carImageLeft = await Flame.images.load('1.png');
+    carImageRight = await Flame.images.load('3.png');
     horizonImage = await Flame.images.load('neon-background.png');
   }
 }
@@ -132,8 +132,8 @@ class Car extends PositionComponent with HasGameRef<MyGame> {
 
   @override
   void resize(Size size) {
-    x = size.width * .5;
-    y = size.height * .86;
+    x = size.width * .3;
+    y = size.height * .75;
   }
 
   @override
@@ -141,7 +141,7 @@ class Car extends PositionComponent with HasGameRef<MyGame> {
     prepareCanvas(c);
     if (gameRef.carImage != null) {
       c.save();
-      c.scale(0.7, 0.7);
+      c.scale(0.3, 0.3);
       if (angle > -0.03 && angle < 0.03) {
         c.drawImage(gameRef.carImage, Offset(-180, -120), Paint());
       } else if (angle < -0.03) {
@@ -192,8 +192,10 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
   void render(Canvas c) {
     prepareCanvas(c);
     _drawBackground(c);
-    _drawGamePlane(c, color: Palette.pink.color, stroke: 3, blendMode: BlendMode.srcOver);
-    _drawGamePlane(c, color: Palette.white.color, stroke: 1, blendMode: BlendMode.luminosity);
+    _drawGamePlane(c,
+        color: Palette.pink.color, stroke: 3, blendMode: BlendMode.srcOver);
+    _drawGamePlane(c,
+        color: Palette.white.color, stroke: 1, blendMode: BlendMode.luminosity);
     if (gameRef.horizonImage != null) {
       c.save();
       c.scale(0.45, 0.45);
@@ -202,16 +204,23 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
     }
   }
 
-  void _drawGamePlane(Canvas canvas, {Color color, double stroke, BlendMode blendMode}) {
+  void _drawGamePlane(Canvas canvas,
+      {Color color, double stroke, BlendMode blendMode}) {
     Paint linePaint = Paint()
       ..strokeWidth = stroke
       ..blendMode = blendMode;
     if (color != Palette.white.color) {
       linePaint.shader = ui.Gradient.linear(
-          Offset(width / 2, 0), Offset(width, height), [Palette.magenta.color, Palette.pink.color, color], [.3, .7, 1]);
+          Offset(width / 2, 0),
+          Offset(width, height),
+          [Palette.magenta.color, Palette.pink.color, color],
+          [.3, .7, 1]);
     } else {
       linePaint.shader = ui.Gradient.linear(
-          Offset(width / 2, 0), Offset(width, height), [Palette.pink.color, Palette.magenta.color, color], [.1, .3, 1]);
+          Offset(width / 2, 0),
+          Offset(width, height),
+          [Palette.pink.color, Palette.magenta.color, color],
+          [.1, .3, 1]);
     }
 
     final lineSpacing = 60.0;
@@ -219,23 +228,26 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
     final movementAmount = (lineSpacing * speedFactor).floorToDouble();
     double lastLineY = height + movementAmount;
     final horizonY = height * .6;
-    canvas.drawLine(Offset(0 - width, lastLineY), Offset(width + width, lastLineY), linePaint);
+    canvas.drawLine(Offset(0 - width, lastLineY),
+        Offset(width + width, lastLineY), linePaint);
     while (lastLineY > horizonY * 1.04) {
       final factor = (lastLineY - horizonY) / horizonY;
       final lineY = lastLineY - lineSpacing * factor;
-      canvas.drawLine(Offset(0 - width, lineY), Offset(width + width, lineY), linePaint);
+      canvas.drawLine(
+          Offset(0 - width, lineY), Offset(width + width, lineY), linePaint);
       lastLineY = lineY;
     }
 
     final centerX = width / 2 * (1 - angle);
-    canvas.drawLine(Offset(centerX, height), Offset(centerX, horizonY * 1.04), linePaint);
+    canvas.drawLine(
+        Offset(centerX, height), Offset(centerX, horizonY * 1.04), linePaint);
     for (int i = 1; i < 20; i++) {
       double topSpacing = lineSpacing * .3 * i;
       double bottomSpacing = lineSpacing * i;
-      canvas.drawLine(
-          Offset(centerX - bottomSpacing, height), Offset(centerX - topSpacing, horizonY * 1.04), linePaint);
-      canvas.drawLine(
-          Offset(centerX + bottomSpacing, height), Offset(centerX + topSpacing, horizonY * 1.04), linePaint);
+      canvas.drawLine(Offset(centerX - bottomSpacing, height),
+          Offset(centerX - topSpacing, horizonY * 1.04), linePaint);
+      canvas.drawLine(Offset(centerX + bottomSpacing, height),
+          Offset(centerX + topSpacing, horizonY * 1.04), linePaint);
     }
   }
 
