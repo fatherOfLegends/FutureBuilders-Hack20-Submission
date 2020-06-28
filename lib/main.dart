@@ -18,43 +18,62 @@ Future<void> main() async {
 class BoxGame extends Game with TapDetector {
   Size screenSize;
   bool hasWon = false;
+  int currentTime = 0;
 
-  double scaleFactor = 1.0;
-  bool shrink = false;
+  double get height => screenSize.height;
+  double get width => screenSize.width;
 
   void render(Canvas canvas) {
-    // draw a black background on the whole screen
-    Rect bgRect = Rect.fromLTWH(0, 0, screenSize.width, screenSize.height);
-    Paint bgPaint = Paint();
-    bgPaint.color = Color(0xff000000);
-    canvas.drawRect(bgRect, bgPaint);
+    _drawBackground(canvas);
+    _drawGamePlane(canvas);
 
-    if (scaleFactor >= 1.2) {
-      shrink = true;
-    } else if (scaleFactor <= 1.0) {
-      shrink = false;
-    }
-    scaleFactor = shrink ? scaleFactor * .99 : scaleFactor * 1.01;
-
-    // draw a box (make it green if won, white otherwise)
-    double screenCenterX = screenSize.width / 2;
-    double screenCenterY = screenSize.height / 2;
-    Rect boxRect = Rect.fromLTWH(
-      screenCenterX - 75 * scaleFactor,
-      screenCenterY - 75 * scaleFactor,
-      150 * scaleFactor,
-      150 * scaleFactor,
-    );
     Paint boxPaint = Paint();
     if (hasWon) {
       boxPaint.color = Color(0xfffe00fe);
     } else {
       boxPaint.color = Color(0xff00b3fe);
     }
-    canvas.drawRect(boxRect, boxPaint);
   }
 
-  void update(double t) {}
+  void _drawGamePlane(Canvas canvas) {
+    Paint linePaint = Paint()
+      ..color = Color(0xfffe00fe)
+      ..strokeWidth = 2;
+    final lineSpacing = 60.0;
+    final speedFactor = currentTime % 400 / 400;
+    final movementAmount = (lineSpacing * speedFactor).floorToDouble();
+    double lastLineY = height + movementAmount;
+    final horizonY = height * .6;
+    canvas.drawLine(Offset(0, lastLineY), Offset(width, lastLineY), linePaint);
+    while (lastLineY > horizonY * 1.04) {
+      final factor = (lastLineY - horizonY) / horizonY;
+      final lineY = lastLineY - lineSpacing * factor;
+      canvas.drawLine(Offset(0, lineY), Offset(width, lineY), linePaint);
+      lastLineY = lineY;
+    }
+
+    final centerX = width / 2;
+    canvas.drawLine(Offset(centerX, height), Offset(centerX, horizonY * 1.04), linePaint);
+    for (int i = 1; i < 10; i++) {
+      double topSpacing = lineSpacing * .3 * i;
+      double bottomSpacing = lineSpacing * i;
+      canvas.drawLine(
+          Offset(centerX - bottomSpacing, height), Offset(centerX - topSpacing, horizonY * 1.04), linePaint);
+      canvas.drawLine(
+          Offset(centerX + bottomSpacing, height), Offset(centerX + topSpacing, horizonY * 1.04), linePaint);
+    }
+  }
+
+  void _drawBackground(Canvas canvas) {
+    Rect bgRect = Rect.fromLTWH(0, 0, screenSize.width, screenSize.height);
+    Paint bgPaint = Paint();
+    bgPaint.color = Color(0xff000000);
+    canvas.drawRect(bgRect, bgPaint);
+  }
+
+  void update(double t) {
+    currentTime += (t * 1000).toInt();
+  }
 
   void resize(Size size) {
     screenSize = size;
