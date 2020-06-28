@@ -177,6 +177,8 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
   static const ROTATION_SPEED = 0.75;
   int currentTime = 0;
   bool driftLeft = true;
+  int projectileLeftStartTime = 0;
+  int projectileRightStartTime = 0;
 
   Size get screenSize => gameRef.screenSize;
   double get height => screenSize.height;
@@ -236,6 +238,32 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
           Offset(centerX - bottomSpacing, height), Offset(centerX - topSpacing, horizonY * 1.04), linePaint);
       canvas.drawLine(
           Offset(centerX + bottomSpacing, height), Offset(centerX + topSpacing, horizonY * 1.04), linePaint);
+      if (i == 3) {
+        if (projectileLeftStartTime > 0) {
+          final time = (currentTime - projectileLeftStartTime) % 2000 / 2000;
+          if (time <= 1) {
+            final t = Curves.easeInQuad.transform(time);
+            final teen = Tween<Offset>(
+                begin: Offset(centerX + topSpacing, horizonY * 1.06), end: Offset(centerX + bottomSpacing, height));
+            final size = Tween<double>(begin: 2, end: 40);
+            canvas.drawCircle(teen.transform(t), size.transform(time), Paint()..color = Palette.blue.color);
+          } else {
+            projectileLeftStartTime = 0;
+          }
+        }
+        if (projectileRightStartTime > 0) {
+          final time = (currentTime - projectileRightStartTime) % 2000 / 2000;
+          if (time <= 1) {
+            final t = Curves.easeInQuad.transform(time);
+            final teen = Tween<Offset>(
+                begin: Offset(centerX - topSpacing, horizonY * 1.06), end: Offset(centerX - bottomSpacing, height));
+            final size = Tween<double>(begin: 2, end: 40);
+            canvas.drawCircle(teen.transform(t), size.transform(time), Paint()..color = Palette.blue.color);
+          } else {
+            projectileRightStartTime = 0;
+          }
+        }
+      }
     }
   }
 
@@ -252,7 +280,13 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
     currentTime += (t * 1000).toInt();
     if (driftLeft) {
       angle = math.max(-.2, angle - .01);
+      if (projectileLeftStartTime == 0) {
+        projectileLeftStartTime = currentTime;
+      }
     } else {
+      if (projectileRightStartTime == 0) {
+        projectileRightStartTime = currentTime;
+      }
       angle = math.min(.2, angle + .01);
     }
     /*angle += ROTATION_SPEED * t;
