@@ -71,6 +71,7 @@ class MyGame extends BaseGame with TapDetector {
     car = Car();
     add(car);
     add(Score());
+    add(Pause());
     _loadImages();
   }
 
@@ -83,14 +84,19 @@ class MyGame extends BaseGame with TapDetector {
   void onTap() {
     ground.driftLeft = !ground.driftLeft;
     car.driftLeft = !car.driftLeft;
+  }
 
-    /*if (running) {
-      pauseEngine();
-    } else {
-      resumeEngine();
+  @override
+  void onTapDown(TapDownDetails details) {
+    if (details.globalPosition.dx > screenSize.width - 80 && details.globalPosition.dy < 48) {
+      if (running) {
+        pauseEngine();
+      } else {
+        resumeEngine();
+      }
+
+      running = !running;
     }
-
-    running = !running;*/
   }
 
   Future<void> _loadImages() async {
@@ -106,6 +112,14 @@ class Score extends PositionComponent with HasGameRef<MyGame> {
   void render(Canvas c) {
     prepareCanvas(c);
     textConfig.render(c, 'Score: ${gameRef.score}', Position(24, 24));
+  }
+}
+
+class Pause extends PositionComponent with HasGameRef<MyGame> {
+  @override
+  void render(Canvas c) {
+    prepareCanvas(c);
+    textConfig.render(c, 'Pause', Position(gameRef.screenSize.width - 94, 24));
   }
 }
 
@@ -143,9 +157,6 @@ class Car extends PositionComponent with HasGameRef<MyGame> {
     } else {
       angle = math.max(-.1, angle - .01);
     }
-    //angle = angle == .01 ? -.01 : .01;
-    /*angle += SPEED * t;
-    angle %= 2 * math.pi;*/
   }
 
   @override
@@ -276,8 +287,6 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
 
       angle = math.min(.2, angle + .01);
     }
-    /*angle += ROTATION_SPEED * t;
-    angle %= 2 * math.pi;*/
   }
 
   @override
