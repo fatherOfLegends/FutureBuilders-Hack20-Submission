@@ -66,6 +66,7 @@ class MyGame extends BaseGame with TapDetector {
   ui.Image horizonImage;
   Ground ground;
   Car car;
+  ShipLocation shipLocation = ShipLocation.center;
 
   MyGame() {
     ground = Ground();
@@ -95,14 +96,17 @@ class MyGame extends BaseGame with TapDetector {
     }
 
     if (details.globalPosition.dx > screenSize.width * .6666) {
-      ground.shipLocation = ShipLocation.right;
-      car.shipLocation = ShipLocation.right;
-    } else if (details.globalPosition.dx > screenSize.width * .3333) {
-      ground.shipLocation = ShipLocation.center;
-      car.shipLocation = ShipLocation.center;
+      if (shipLocation == ShipLocation.left) {
+        shipLocation = ShipLocation.center;
+      } else if (shipLocation == ShipLocation.center) {
+        shipLocation = ShipLocation.right;
+      }
     } else if (details.globalPosition.dx > 0) {
-      ground.shipLocation = ShipLocation.left;
-      car.shipLocation = ShipLocation.left;
+      if (shipLocation == ShipLocation.right) {
+        shipLocation = ShipLocation.center;
+      } else if (shipLocation == ShipLocation.center) {
+        shipLocation = ShipLocation.left;
+      }
     }
   }
 
@@ -133,8 +137,6 @@ class Pause extends PositionComponent with HasGameRef<MyGame> {
 class Car extends PositionComponent with HasGameRef<MyGame> {
   static const SPEED = 0.25;
 
-  ShipLocation shipLocation = ShipLocation.center;
-
   @override
   void resize(Size size) {
     x = size.width * .372;
@@ -161,9 +163,9 @@ class Car extends PositionComponent with HasGameRef<MyGame> {
   @override
   void update(double t) {
     super.update(t);
-    if (shipLocation == ShipLocation.left) {
+    if (gameRef.shipLocation == ShipLocation.left) {
       angle = math.min(.1, angle + .01);
-    } else if (shipLocation == ShipLocation.right) {
+    } else if (gameRef.shipLocation == ShipLocation.right) {
       angle = math.max(-.1, angle - .01);
     } else if (angle > 0) {
       angle = math.max(0, angle - .01);
@@ -184,7 +186,6 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
   double friction = 1;
   static const ROTATION_SPEED = 0.75;
   int currentTime = 0;
-  ShipLocation shipLocation = ShipLocation.center;
   int projectileLeftStartTime = 0;
   int projectileRightStartTime = 0;
   int projectileCenterStartTime = 0;
@@ -289,12 +290,12 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
   void update(double t) {
     super.update(t);
     currentTime += (t * 1000).toInt();
-    if (shipLocation == ShipLocation.left) {
+    if (gameRef.shipLocation == ShipLocation.left) {
       angle = math.max(-.2, angle - .01);
       if (projectileRightStartTime == 0) {
         projectileRightStartTime = currentTime;
       }
-    } else if (shipLocation == ShipLocation.right) {
+    } else if (gameRef.shipLocation == ShipLocation.right) {
       if (projectileLeftStartTime == 0) {
         projectileLeftStartTime = currentTime;
       }
