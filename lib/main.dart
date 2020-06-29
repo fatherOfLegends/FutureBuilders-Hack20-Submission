@@ -54,6 +54,8 @@ class Palette {
   static const PaletteEntry blue = PaletteEntry(Color(0xff00b3fe));
 }
 
+enum ShipLocation { left, center, right }
+
 class MyGame extends BaseGame with TapDetector {
   int score = 0;
   bool running = true;
@@ -81,12 +83,6 @@ class MyGame extends BaseGame with TapDetector {
   }
 
   @override
-  void onTap() {
-    ground.driftLeft = !ground.driftLeft;
-    car.driftLeft = !car.driftLeft;
-  }
-
-  @override
   void onTapDown(TapDownDetails details) {
     if (details.globalPosition.dx > screenSize.width - 80 && details.globalPosition.dy < 48) {
       if (running) {
@@ -96,6 +92,17 @@ class MyGame extends BaseGame with TapDetector {
       }
 
       running = !running;
+    }
+
+    if (details.globalPosition.dx > screenSize.width * .6666) {
+      ground.shipLocation = ShipLocation.right;
+      car.shipLocation = ShipLocation.right;
+    } else if (details.globalPosition.dx > screenSize.width * .3333) {
+      ground.shipLocation = ShipLocation.center;
+      car.shipLocation = ShipLocation.center;
+    } else if (details.globalPosition.dx > 0) {
+      ground.shipLocation = ShipLocation.left;
+      car.shipLocation = ShipLocation.left;
     }
   }
 
@@ -126,12 +133,12 @@ class Pause extends PositionComponent with HasGameRef<MyGame> {
 class Car extends PositionComponent with HasGameRef<MyGame> {
   static const SPEED = 0.25;
 
-  bool driftLeft = true;
+  ShipLocation shipLocation = ShipLocation.center;
 
   @override
   void resize(Size size) {
-    x = size.width * .3;
-    y = size.height * .75;
+    x = size.width * .372;
+    y = size.height * .85;
   }
 
   @override
@@ -154,10 +161,14 @@ class Car extends PositionComponent with HasGameRef<MyGame> {
   @override
   void update(double t) {
     super.update(t);
-    if (driftLeft) {
+    if (shipLocation == ShipLocation.left) {
       angle = math.min(.1, angle + .01);
-    } else {
+    } else if (shipLocation == ShipLocation.right) {
       angle = math.max(-.1, angle - .01);
+    } else if (angle > 0) {
+      angle = math.max(0, angle - .01);
+    } else if (angle < 0) {
+      angle = math.min(0, angle + .01);
     }
   }
 
@@ -173,9 +184,10 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
   double friction = 1;
   static const ROTATION_SPEED = 0.75;
   int currentTime = 0;
-  bool driftLeft = true;
+  ShipLocation shipLocation = ShipLocation.center;
   int projectileLeftStartTime = 0;
   int projectileRightStartTime = 0;
+  int projectileCenterStartTime = 0;
 
   Size get screenSize => gameRef.screenSize;
   double get height => screenSize.height;
@@ -191,10 +203,8 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
   void render(Canvas c) {
     prepareCanvas(c);
     _drawBackground(c);
-    _drawGamePlane(c,
-        color: Palette.pink.color, stroke: 3, blendMode: BlendMode.srcOver);
-    _drawGamePlane(c,
-        color: Palette.white.color, stroke: 1, blendMode: BlendMode.luminosity);
+    _drawGamePlane(c, color: Palette.pink.color, stroke: 3, blendMode: BlendMode.srcOver);
+    _drawGamePlane(c, color: Palette.white.color, stroke: 1, blendMode: BlendMode.luminosity);
     if (gameRef.horizonImage != null) {
       c.save();
       c.scale(0.45, 0.45);
@@ -203,23 +213,16 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
     }
   }
 
-  void _drawGamePlane(Canvas canvas,
-      {Color color, double stroke, BlendMode blendMode}) {
+  void _drawGamePlane(Canvas canvas, {Color color, double stroke, BlendMode blendMode}) {
     Paint linePaint = Paint()
       ..strokeWidth = stroke
       ..blendMode = blendMode;
     if (color != Palette.white.color) {
       linePaint.shader = ui.Gradient.linear(
-          Offset(width / 2, 0),
-          Offset(width, height),
-          [Palette.magenta.color, Palette.pink.color, color],
-          [.3, .7, 1]);
+          Offset(width / 2, 0), Offset(width, height), [Palette.magenta.color, Palette.pink.color, color], [.3, .7, 1]);
     } else {
       linePaint.shader = ui.Gradient.linear(
-          Offset(width / 2, 0),
-          Offset(width, height),
-          [Palette.pink.color, Palette.magenta.color, color],
-          [.1, .3, 1]);
+          Offset(width / 2, 0), Offset(width, height), [Palette.pink.color, Palette.magenta.color, color], [.1, .3, 1]);
     }
 
     final lineSpacing = 60.0;
@@ -227,54 +230,45 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
     final movementAmount = (lineSpacing * speedFactor).floorToDouble();
     double lastLineY = height + movementAmount;
     final horizonY = height * .6;
-    canvas.drawLine(Offset(0 - width, lastLineY),
-        Offset(width + width, lastLineY), linePaint);
+    canvas.drawLine(Offset(0 - width, lastLineY), Offset(width + width, lastLineY), linePaint);
     while (lastLineY > horizonY * 1.04) {
       final factor = (lastLineY - horizonY) / horizonY;
       final lineY = lastLineY - lineSpacing * factor;
-      canvas.drawLine(
-          Offset(0 - width, lineY), Offset(width + width, lineY), linePaint);
+      canvas.drawLine(Offset(0 - width, lineY), Offset(width + width, lineY), linePaint);
       lastLineY = lineY;
     }
 
     final centerX = width / 2 * (1 - angle);
-    canvas.drawLine(
-        Offset(centerX, height), Offset(centerX, horizonY * 1.04), linePaint);
+    canvas.drawLine(Offset(centerX, height), Offset(centerX, horizonY * 1.04), linePaint);
     for (int i = 1; i < 20; i++) {
       double topSpacing = lineSpacing * .3 * i;
       double bottomSpacing = lineSpacing * i;
-      canvas.drawLine(Offset(centerX - bottomSpacing, height),
-          Offset(centerX - topSpacing, horizonY * 1.04), linePaint);
-      canvas.drawLine(Offset(centerX + bottomSpacing, height),
-          Offset(centerX + topSpacing, horizonY * 1.04), linePaint);
+      canvas.drawLine(
+          Offset(centerX - bottomSpacing, height), Offset(centerX - topSpacing, horizonY * 1.04), linePaint);
+      canvas.drawLine(
+          Offset(centerX + bottomSpacing, height), Offset(centerX + topSpacing, horizonY * 1.04), linePaint);
       if (i == 5) {
         if (projectileLeftStartTime > 0) {
-          final time =
-              math.min(currentTime - projectileLeftStartTime, 2000) / 2000;
+          final time = math.min(currentTime - projectileLeftStartTime, 2000) / 2000;
           if (time < 1) {
             final t = Curves.easeInQuad.transform(time);
             final teen = Tween<Offset>(
-                begin: Offset(centerX + topSpacing, horizonY * 1.06),
-                end: Offset(centerX + bottomSpacing, height));
+                begin: Offset(centerX + topSpacing, horizonY * 1.06), end: Offset(centerX + bottomSpacing, height));
             final size = Tween<double>(begin: 2, end: 40);
-            canvas.drawCircle(teen.transform(t), size.transform(time),
-                Paint()..color = Palette.blue.color);
+            canvas.drawCircle(teen.transform(t), size.transform(time), Paint()..color = Palette.blue.color);
           } else {
             projectileLeftStartTime = 0;
             gameRef.score++;
           }
         }
         if (projectileRightStartTime > 0) {
-          final time =
-              math.min(currentTime - projectileRightStartTime, 2000) / 2000;
+          final time = math.min(currentTime - projectileRightStartTime, 2000) / 2000;
           if (time < 1) {
             final t = Curves.easeInQuad.transform(time);
             final teen = Tween<Offset>(
-                begin: Offset(centerX - topSpacing, horizonY * 1.06),
-                end: Offset(centerX - bottomSpacing, height));
+                begin: Offset(centerX - topSpacing, horizonY * 1.06), end: Offset(centerX - bottomSpacing, height));
             final size = Tween<double>(begin: 2, end: 40);
-            canvas.drawCircle(teen.transform(t), size.transform(time),
-                Paint()..color = Palette.blue.color);
+            canvas.drawCircle(teen.transform(t), size.transform(time), Paint()..color = Palette.blue.color);
           } else {
             projectileRightStartTime = 0;
             gameRef.score++;
@@ -295,17 +289,25 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
   void update(double t) {
     super.update(t);
     currentTime += (t * 1000).toInt();
-    if (driftLeft) {
+    if (shipLocation == ShipLocation.left) {
       angle = math.max(-.2, angle - .01);
       if (projectileRightStartTime == 0) {
         projectileRightStartTime = currentTime;
       }
-    } else {
+    } else if (shipLocation == ShipLocation.right) {
       if (projectileLeftStartTime == 0) {
         projectileLeftStartTime = currentTime;
       }
 
       angle = math.min(.2, angle + .01);
+    } else if (angle > 0) {
+      angle = math.max(0, angle - .01);
+    } else if (angle < 0) {
+      angle = math.min(0, angle + .01);
+    } else {
+      if (projectileCenterStartTime == 0) {
+        projectileCenterStartTime = currentTime;
+      }
     }
   }
 
