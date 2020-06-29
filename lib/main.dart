@@ -95,6 +95,7 @@ class MyGame extends BaseGame with TapDetector {
       running = !running;
       return;
     }
+    if (!running) return;
 
     if (details.globalPosition.dx > screenSize.width * .6666) {
       if (shipLocation == ShipLocation.left) {
