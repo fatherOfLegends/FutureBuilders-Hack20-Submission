@@ -11,39 +11,20 @@ import 'package:flame/palette.dart';
 import 'package:flame/position.dart';
 import 'package:flame/text_config.dart';
 import 'package:flame/util.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 Future<void> main() async {
-  Util flameUtil = Util();
   WidgetsFlutterBinding.ensureInitialized();
-  await flameUtil.fullScreen();
-  await flameUtil.setOrientation(DeviceOrientation.portraitUp);
+  if (!kIsWeb) {
+    Util flameUtil = Util();
+    await flameUtil.fullScreen();
+    await flameUtil.setOrientation(DeviceOrientation.portraitUp);
+  }
 
   final game = MyGame();
   runApp(game.widget);
-  /*BoxGame game = BoxGame();
-  runApp(
-    Stack(
-      children: [
-        game.widget,
-        Image.asset('images/neon-background.jpg'),
-        Align(
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 32),
-            child: Image.asset(
-              'images/car.png',
-              width: 100,
-              height: 200,
-            ),
-          ),
-          alignment: Alignment.bottomCenter,
-        ),
-      ],
-      textDirection: TextDirection.ltr,
-      alignment: Alignment.topCenter,
-    ),
-  );*/
 }
 
 class Palette {
@@ -208,12 +189,12 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
     _drawBackground(c);
     _drawGamePlane(c, color: Palette.pink.color, stroke: 3, blendMode: BlendMode.srcOver);
     _drawGamePlane(c, color: Palette.white.color, stroke: 1, blendMode: BlendMode.luminosity);
-    if (gameRef.horizonImage != null) {
+/*    if (gameRef.horizonImage != null) {
       c.save();
       c.scale(0.45, 0.45);
       c.drawImage(gameRef.horizonImage, Offset(-100, 0), Paint());
       c.restore();
-    }
+    }*/
   }
 
   void _drawGamePlane(Canvas canvas, {Color color, double stroke, BlendMode blendMode}) {
@@ -228,28 +209,34 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
           Offset(width / 2, 0), Offset(width, height), [Palette.pink.color, Palette.magenta.color, color], [.1, .3, 1]);
     }
 
-    final lineSpacing = 60.0;
+    canvas.save();
+    final matrix = Matrix4.identity()
+      ..setEntry(3, 2, 0.01) // perspective
+      ..rotateX(0.01 * 0) // changed
+      ..rotateY(-0.01 * 0)
+      ..rotateZ(0.01 * 10)
+      ..translate(0.0, 0.0, 0.0);
+    canvas.transform(matrix.storage);
+    final lineSpacing = 30.0;
     final speedFactor = (currentTime % (132 * friction)) / (160 * friction);
     final movementAmount = (lineSpacing * speedFactor).floorToDouble();
-    double lastLineY = height + movementAmount;
-    final horizonY = height * .6;
-    canvas.drawLine(Offset(0 - width, lastLineY), Offset(width + width, lastLineY), linePaint);
-    while (lastLineY > horizonY * 1.04) {
-      final factor = (lastLineY - horizonY) / horizonY;
-      final lineY = lastLineY - lineSpacing * factor;
-      canvas.drawLine(Offset(0 - width, lineY), Offset(width + width, lineY), linePaint);
+    double lastLineY = height;
+    final horizonY = -height * 2;
+    canvas.drawLine(Offset(0 - width, lastLineY), Offset(width * 2, lastLineY), linePaint);
+    while (lastLineY > horizonY) {
+      //final factor = (lastLineY - horizonY) / horizonY;
+      final lineY = lastLineY - lineSpacing;
+      canvas.drawLine(Offset(0 - width, lineY), Offset(width * 2, lineY), linePaint);
       lastLineY = lineY;
     }
 
     final centerX = width / 2 * (1 - angle);
-    canvas.drawLine(Offset(centerX, height), Offset(centerX, horizonY * 1.04), linePaint);
-    for (int i = 1; i < 20; i++) {
-      double topSpacing = lineSpacing * .3 * i;
+    canvas.drawLine(Offset(centerX, height), Offset(centerX, horizonY), linePaint);
+    for (int i = 1; i < 2; i++) {
+      double topSpacing = lineSpacing * i;
       double bottomSpacing = lineSpacing * i;
-      canvas.drawLine(
-          Offset(centerX - bottomSpacing, height), Offset(centerX - topSpacing, horizonY * 1.04), linePaint);
-      canvas.drawLine(
-          Offset(centerX + bottomSpacing, height), Offset(centerX + topSpacing, horizonY * 1.04), linePaint);
+      canvas.drawLine(Offset(centerX - bottomSpacing, height), Offset(centerX - topSpacing, horizonY), linePaint);
+      canvas.drawLine(Offset(centerX + bottomSpacing, height), Offset(centerX + topSpacing, horizonY), linePaint);
       if (i == 5) {
         if (projectileLeftStartTime > 0) {
           final time = math.min(currentTime - projectileLeftStartTime, 2000) / 2000;
@@ -279,6 +266,7 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
         }
       }
     }
+    canvas.restore();
   }
 
   void _drawBackground(Canvas canvas) {
