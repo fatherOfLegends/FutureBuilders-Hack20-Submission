@@ -92,9 +92,9 @@ class MyGame extends BaseGame with TapDetector {
   }
 
   Future<void> _loadImages() async {
-    carImage = await Flame.images.load('ship_mid.png');
-    carImageLeft = await Flame.images.load('ship_left.png');
-    carImageRight = await Flame.images.load('ship_right.png');
+    carImage = await Flame.images.load('2.png');
+    carImageLeft = await Flame.images.load('1.png');
+    carImageRight = await Flame.images.load('3.png');
     horizonImage = await Flame.images.load('neon-background.png');
   }
 }
@@ -132,8 +132,8 @@ class Car extends PositionComponent with HasGameRef<MyGame> {
 
   @override
   void resize(Size size) {
-    x = size.width * .5;
-    y = size.height * .86;
+    x = size.width * .3;
+    y = size.height * .75;
   }
 
   @override
@@ -141,12 +141,10 @@ class Car extends PositionComponent with HasGameRef<MyGame> {
     prepareCanvas(c);
     if (gameRef.carImage != null) {
       c.save();
-      c.scale(0.7, 0.7);
-      if (angle > -0.03 && angle < 0.03) {
-        c.drawImage(gameRef.carImage, Offset(-180, -120), Paint());
-      } else if (angle < -0.03) {
+      c.scale(0.3, 0.3);
+      if (angle < 0) {
         c.drawImage(gameRef.carImageRight, Offset(-180, -120), Paint());
-      } else if (angle > 0.03) {
+      } else if (angle >= 0) {
         c.drawImage(gameRef.carImageLeft, Offset(-180, -120), Paint());
       }
       c.restore();
@@ -241,7 +239,7 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
       if (i == 3) {
         if (projectileLeftStartTime > 0) {
           final time = (currentTime - projectileLeftStartTime) % 2000 / 2000;
-          if (time <= 1) {
+          if (time <= .95) {
             final t = Curves.easeInQuad.transform(time);
             final teen = Tween<Offset>(
                 begin: Offset(centerX + topSpacing, horizonY * 1.06), end: Offset(centerX + bottomSpacing, height));
@@ -253,7 +251,7 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
         }
         if (projectileRightStartTime > 0) {
           final time = (currentTime - projectileRightStartTime) % 2000 / 2000;
-          if (time <= 1) {
+          if (time <= .95) {
             final t = Curves.easeInQuad.transform(time);
             final teen = Tween<Offset>(
                 begin: Offset(centerX - topSpacing, horizonY * 1.06), end: Offset(centerX - bottomSpacing, height));
