@@ -8,6 +8,8 @@ import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
 import 'package:flame/gestures.dart';
 import 'package:flame/palette.dart';
+import 'package:flame/position.dart';
+import 'package:flame/text_config.dart';
 import 'package:flame/util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -53,7 +55,7 @@ class Palette {
 }
 
 class MyGame extends BaseGame with TapDetector {
-  final double squareSize = 128;
+  int score = 0;
   bool running = true;
   Size screenSize;
   ui.Image carImage;
@@ -66,9 +68,9 @@ class MyGame extends BaseGame with TapDetector {
   MyGame() {
     ground = Ground();
     add(ground);
-    //add(Horizon());
     car = Car();
     add(car);
+    add(Score());
     _loadImages();
   }
 
@@ -98,32 +100,14 @@ class MyGame extends BaseGame with TapDetector {
     horizonImage = await Flame.images.load('neon-background.png');
   }
 }
-/*
-class Horizon extends PositionComponent with HasGameRef<MyGame> {
-  static const ROTATION_SPEED = 0.75;
 
-  @override
-  void resize(Size size) {
-    x = -10;
-    y = -8;
-  }
-
+class Score extends PositionComponent with HasGameRef<MyGame> {
   @override
   void render(Canvas c) {
     prepareCanvas(c);
-    if (gameRef.horizonImage != null) {
-      c.save();
-      c.scale(0.45, 0.45);
-      c.drawImage(gameRef.horizonImage, Offset.zero, Paint());
-      c.restore();
-    }
+    textConfig.render(c, 'Score: ${gameRef.score}', Position(24, 24));
   }
-
-  @override
-  void onMount() {
-    anchor = Anchor.center;
-  }
-}*/
+}
 
 class Car extends PositionComponent with HasGameRef<MyGame> {
   static const SPEED = 0.25;
@@ -169,6 +153,8 @@ class Car extends PositionComponent with HasGameRef<MyGame> {
     anchor = Anchor.center;
   }
 }
+
+final textConfig = TextConfig(color: Palette.white.color);
 
 class Ground extends PositionComponent with HasGameRef<MyGame> {
   double friction = 1;
@@ -236,10 +222,10 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
           Offset(centerX - bottomSpacing, height), Offset(centerX - topSpacing, horizonY * 1.04), linePaint);
       canvas.drawLine(
           Offset(centerX + bottomSpacing, height), Offset(centerX + topSpacing, horizonY * 1.04), linePaint);
-      if (i == 3) {
+      if (i == 5) {
         if (projectileLeftStartTime > 0) {
-          final time = (currentTime - projectileLeftStartTime) % 2000 / 2000;
-          if (time <= .95) {
+          final time = math.min(currentTime - projectileLeftStartTime, 2000) / 2000;
+          if (time < 1) {
             final t = Curves.easeInQuad.transform(time);
             final teen = Tween<Offset>(
                 begin: Offset(centerX + topSpacing, horizonY * 1.06), end: Offset(centerX + bottomSpacing, height));
@@ -247,11 +233,12 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
             canvas.drawCircle(teen.transform(t), size.transform(time), Paint()..color = Palette.blue.color);
           } else {
             projectileLeftStartTime = 0;
+            gameRef.score++;
           }
         }
         if (projectileRightStartTime > 0) {
-          final time = (currentTime - projectileRightStartTime) % 2000 / 2000;
-          if (time <= .95) {
+          final time = math.min(currentTime - projectileRightStartTime, 2000) / 2000;
+          if (time < 1) {
             final t = Curves.easeInQuad.transform(time);
             final teen = Tween<Offset>(
                 begin: Offset(centerX - topSpacing, horizonY * 1.06), end: Offset(centerX - bottomSpacing, height));
@@ -259,6 +246,7 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
             canvas.drawCircle(teen.transform(t), size.transform(time), Paint()..color = Palette.blue.color);
           } else {
             projectileRightStartTime = 0;
+            gameRef.score++;
           }
         }
       }
@@ -294,7 +282,6 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
 
   @override
   void onMount() {
-    width = height = gameRef.squareSize;
     anchor = Anchor.center;
   }
 }
