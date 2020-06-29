@@ -278,13 +278,14 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
     currentTime += (t * 1000).toInt();
     if (driftLeft) {
       angle = math.max(-.2, angle - .01);
-      if (projectileLeftStartTime == 0) {
-        projectileLeftStartTime = currentTime;
-      }
-    } else {
       if (projectileRightStartTime == 0) {
         projectileRightStartTime = currentTime;
       }
+    } else {
+      if (projectileLeftStartTime == 0) {
+        projectileLeftStartTime = currentTime;
+      }
+
       angle = math.min(.2, angle + .01);
     }
     /*angle += ROTATION_SPEED * t;
