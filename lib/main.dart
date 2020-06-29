@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
-import 'package:flame/anchor.dart';
 import 'package:flame/components/component.dart';
 import 'package:flame/components/mixins/has_game_ref.dart';
 import 'package:flame/flame.dart';
@@ -15,68 +14,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-class MyHomePage extends StatefulWidget {
-  MyGame game;
-
-  MyHomePage(this.game);
-
-  @override
-  _MyHomePageState createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  double x = 0;
-  double y = 0;
-  double z = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Transform(
-          transform: Matrix4(
-            1,
-            0,
-            0,
-            0,
-            0,
-            1,
-            0,
-            0,
-            0,
-            0,
-            1,
-            0,
-            0,
-            0,
-            0,
-            1,
-          )
-            ..setEntry(3, 2, 0.002)
-            ..rotateX(-1.3)
-            ..rotateY(-3.14)
-            ..rotateZ(z),
-          alignment: FractionalOffset.center,
-          child: GestureDetector(
-            onPanUpdate: (details) {
-              setState(() {
-                print(x);
-                print(y);
-                y = y - details.delta.dx / 100;
-                x = x + details.delta.dy / 100;
-
-//                -1.384155980965303
-//                 -3.154864866216924
-              });
-            },
-            child: widget.game.widget,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (!kIsWeb) {
@@ -86,17 +23,7 @@ Future<void> main() async {
   }
 
   final game = MyGame();
-  runApp(GestureDetector(
-    onPanUpdate: (details) {
-      game.setX(game.xx + details.delta.dy / 100);
-      game.setY(game.yy - details.delta.dx / 100);
-
-//                -1.384155980965303
-//                 -3.154864866216924
-    },
-    child: game.widget,
-  ));
-  //runApp(MaterialApp(home: MyHomePage(game)));
+  runApp(game.widget);
 }
 
 class Palette {
@@ -138,32 +65,31 @@ class MyGame extends BaseGame with TapDetector {
 
   @override
   void onTapDown(TapDownDetails details) {
-//    if (details.globalPosition.dx > screenSize.width - 80 &&
-//        details.globalPosition.dy < 48) {
-//      if (running) {
-//        pauseEngine();
-//      } else {
-//        resumeEngine();
-//      }
-//
-//      running = !running;
-//      return;
-//    }
-//    if (!running) return;
-//
-//    if (details.globalPosition.dx > screenSize.width * .6666) {
-//      if (shipLocation == ShipLocation.left) {
-//        shipLocation = ShipLocation.center;
-//      } else if (shipLocation == ShipLocation.center) {
-//        shipLocation = ShipLocation.right;
-//      }
-//    } else if (details.globalPosition.dx > 0) {
-//      if (shipLocation == ShipLocation.right) {
-//        shipLocation = ShipLocation.center;
-//      } else if (shipLocation == ShipLocation.center) {
-//        shipLocation = ShipLocation.left;
-//      }
-//    }
+    if (details.globalPosition.dx > screenSize.width - 80 && details.globalPosition.dy < 48) {
+      if (running) {
+        pauseEngine();
+      } else {
+        resumeEngine();
+      }
+
+      running = !running;
+      return;
+    }
+    if (!running) return;
+
+    if (details.globalPosition.dx > screenSize.width * .6666) {
+      if (shipLocation == ShipLocation.left) {
+        shipLocation = ShipLocation.center;
+      } else if (shipLocation == ShipLocation.center) {
+        shipLocation = ShipLocation.right;
+      }
+    } else if (details.globalPosition.dx > 0) {
+      if (shipLocation == ShipLocation.right) {
+        shipLocation = ShipLocation.center;
+      } else if (shipLocation == ShipLocation.center) {
+        shipLocation = ShipLocation.left;
+      }
+    }
   }
 
   Future<void> _loadImages() async {
@@ -171,19 +97,6 @@ class MyGame extends BaseGame with TapDetector {
     carImageLeft = await Flame.images.load('1.png');
     carImageRight = await Flame.images.load('3.png');
     horizonImage = await Flame.images.load('neon-background.png');
-  }
-
-  double xx = 0;
-  double yy = 0;
-
-  void setX(double x) {
-    print('sardox MyGame: x:  $x');
-    xx = x;
-  }
-
-  void setY(double y) {
-    print('sardox MyGame: y:  $y');
-    yy = y;
   }
 }
 
@@ -242,17 +155,11 @@ class Car extends PositionComponent with HasGameRef<MyGame> {
       angle = math.min(0, angle + .01);
     }
   }
-
-  @override
-  void onMount() {
-    anchor = Anchor.center;
-  }
 }
 
 final textConfig = TextConfig(color: Palette.white.color);
 
 class Ground extends PositionComponent with HasGameRef<MyGame> {
-  double friction = 1;
   static const ROTATION_SPEED = 0.75;
   int currentTime = 0;
   int projectileLeftStartTime = 0;
@@ -273,105 +180,78 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
   void render(Canvas c) {
     prepareCanvas(c);
     _drawBackground(c);
-    _drawGamePlane(c,
-        color: Palette.pink.color, stroke: 3, blendMode: BlendMode.srcOver);
-    _drawGamePlane(c,
-        color: Palette.white.color, stroke: 1, blendMode: BlendMode.luminosity);
-/*    if (gameRef.horizonImage != null) {
+    _drawGamePlane(c, color: Palette.pink.color, stroke: 3, blendMode: BlendMode.srcOver);
+    _drawGamePlane(c, color: Palette.white.color, stroke: 1, blendMode: BlendMode.luminosity);
+    if (gameRef.horizonImage != null) {
       c.save();
       c.scale(0.45, 0.45);
-      c.drawImage(gameRef.horizonImage, Offset(-100, 0), Paint());
+      c.drawImage(gameRef.horizonImage, Offset(-width * 1.3, -height * 1.5), Paint());
       c.restore();
-    }*/
+    }
   }
 
-  void _drawGamePlane(Canvas canvas,
-      {Color color, double stroke, BlendMode blendMode}) {
+  void _drawGamePlane(Canvas canvas, {Color color, double stroke, BlendMode blendMode}) {
     Paint linePaint = Paint()
       ..strokeWidth = stroke
       ..blendMode = blendMode;
     if (color != Palette.white.color) {
       linePaint.shader = ui.Gradient.linear(
-          Offset(width / 2, 0),
-          Offset(width, height),
-          [Palette.magenta.color, Palette.pink.color, color],
-          [.3, .7, 1]);
+          Offset(width / 2, 0), Offset(width, height), [Palette.magenta.color, Palette.pink.color, color], [.3, .7, 1]);
     } else {
       linePaint.shader = ui.Gradient.linear(
-          Offset(width / 2, 0),
-          Offset(width, height),
-          [Palette.pink.color, Palette.magenta.color, color],
-          [.1, .3, 1]);
+          Offset(width / 2, 0), Offset(width, height), [Palette.pink.color, Palette.magenta.color, color], [.1, .3, 1]);
     }
 
     canvas.save();
+    final movement = Tween<double>(begin: 100, end: 400);
+
     final matrix = Matrix4.identity()
       ..setEntry(3, 2, 0.0015) // perspective
-      ..rotateX(gameRef.xx) // changed
+      ..rotateX(-1.14577) // changed
       ..rotateY(0)
-      ..rotateZ(gameRef.yy)
-      ..translate(-0.0, 180.0, 240.0);
-
+      ..rotateZ(0)
+      ..translate(-180.0, movement.transform(currentTime % 800 / 800), 240.0);
     canvas.transform(matrix.storage);
     final lineSpacing = 30.0;
-    final speedFactor = (currentTime % (132 * friction)) / (160 * friction);
-    final movementAmount = (lineSpacing * speedFactor).floorToDouble();
     double lastLineY = height;
     final horizonY = -height * 2;
 
-//    canvas.drawLine(Offset(50, 300), Offset(350, 300), linePaint);
-//    canvas.drawLine(Offset(50, 500), Offset(350, 500), linePaint);
-//
-//    canvas.drawLine(Offset(100, 200), Offset(100, 600), linePaint);
-//    canvas.drawLine(Offset(300, 200), Offset(300, 600), linePaint);
-    canvas.drawLine(
-        Offset(0 - width, lastLineY), Offset(width * 2, lastLineY), linePaint);
+    canvas.drawLine(Offset(0 - width, lastLineY), Offset(width * 2, lastLineY), linePaint);
     while (lastLineY > horizonY) {
-      //final factor = (lastLineY - horizonY) / horizonY;
       final lineY = lastLineY - lineSpacing;
-      canvas.drawLine(
-          Offset(0 - width, lineY), Offset(width * 2, lineY), linePaint);
+      canvas.drawLine(Offset(0 - width, lineY), Offset(width * 2, lineY), linePaint);
       lastLineY = lineY;
     }
 
     final centerX = width / 2 * (1 - angle);
-    canvas.drawLine(
-        Offset(centerX, height), Offset(centerX, horizonY), linePaint);
+    canvas.drawLine(Offset(centerX, height), Offset(centerX, horizonY), linePaint);
     for (int i = 1; i < 60; i++) {
       double topSpacing = lineSpacing * i;
       double bottomSpacing = lineSpacing * i;
-      canvas.drawLine(Offset(centerX - bottomSpacing, height),
-          Offset(centerX - topSpacing, horizonY), linePaint);
-      canvas.drawLine(Offset(centerX + bottomSpacing, height),
-          Offset(centerX + topSpacing, horizonY), linePaint);
+      canvas.drawLine(Offset(centerX - bottomSpacing, height), Offset(centerX - topSpacing, horizonY), linePaint);
+      canvas.drawLine(Offset(centerX + bottomSpacing, height), Offset(centerX + topSpacing, horizonY), linePaint);
       if (i == 5) {
         if (projectileLeftStartTime > 0) {
-          final time =
-              math.min(currentTime - projectileLeftStartTime, 2000) / 2000;
+          final time = math.min(currentTime - projectileLeftStartTime, 2000) / 2000;
           if (time < 1) {
             final t = Curves.easeInQuad.transform(time);
             final teen = Tween<Offset>(
-                begin: Offset(centerX + topSpacing, horizonY * 1.06),
-                end: Offset(centerX + bottomSpacing, height));
+                begin: Offset(centerX + topSpacing, horizonY * 1.06), end: Offset(centerX + bottomSpacing, height));
             final size = Tween<double>(begin: 2, end: 40);
-            canvas.drawCircle(teen.transform(t), size.transform(time),
-                Paint()..color = Palette.blue.color);
+            canvas.drawCircle(teen.transform(t), size.transform(time), Paint()..color = Palette.blue.color);
           } else {
             projectileLeftStartTime = 0;
             gameRef.score++;
           }
         }
         if (projectileRightStartTime > 0) {
-          final time =
-              math.min(currentTime - projectileRightStartTime, 2000) / 2000;
+          final time = math.min(currentTime - projectileRightStartTime, 2000) / 2000;
           if (time < 1) {
             final t = Curves.easeInQuad.transform(time);
             final teen = Tween<Offset>(
-                begin: Offset(centerX - topSpacing, horizonY * 1.06),
-                end: Offset(centerX - bottomSpacing, height));
+                begin: Offset(centerX - topSpacing, horizonY * 1.06), end: Offset(centerX - bottomSpacing, height));
             final size = Tween<double>(begin: 2, end: 40);
-            canvas.drawCircle(teen.transform(t), size.transform(time),
-                Paint()..color = Palette.blue.color);
+            canvas.drawCircle(teen.transform(t), size.transform(time), Paint()..color = Palette.blue.color);
           } else {
             projectileRightStartTime = 0;
             gameRef.score++;
@@ -413,10 +293,5 @@ class Ground extends PositionComponent with HasGameRef<MyGame> {
         projectileCenterStartTime = currentTime;
       }
     }
-  }
-
-  @override
-  void onMount() {
-    anchor = Anchor.center;
   }
 }
